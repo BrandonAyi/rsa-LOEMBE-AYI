@@ -15,6 +15,45 @@
 #define PACKAGE_LENGTH 4096 // be careful, if you increase the buffer's size, you won't receive packets from the browser
 #define HTTP_PORT 80
 
+char *strReplace(char *orig, char *rep, char *with) { // function to replace a char * to an other in the buffer (Source : http://stackoverflow.com/questions/779875/what-is-the-function-to-replace-string-in-c)
+    char *result; // the return string
+    char *ins;    // the next insert point
+    char *tmp;    // varies
+    int len_rep;  // length of rep
+    int len_with; // length of with
+    int len_front; // distance between rep and end of last rep
+    int count;    // number of replacements
+
+    if (!orig)
+      return NULL;
+    if (!rep)
+      rep = "";
+    len_rep = strlen(rep);
+    if (!with)
+      with = "";
+    len_with = strlen(with);
+
+    ins = orig;
+    for (count = 0; (tmp = strstr(ins, rep)); ++count) {
+      ins = tmp + len_rep;
+    }
+
+    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+    if (!result)
+      return NULL;
+
+    while (count--) {
+      ins = strstr(orig, rep);
+      len_front = ins - orig;
+      tmp = strncpy(tmp, orig, len_front) + len_front;
+      tmp = strcpy(tmp, with) + len_with;
+        orig += len_front + len_rep; // move to next "end of rep"
+      }
+      strcpy(tmp, orig);
+      return result;
+    }
+
 int init(int sock, struct sockaddr_in serv_addr, int port) {
 
 	serv_addr.sin_family = AF_INET ;
@@ -93,7 +132,9 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	/*Pour un seul client */
+	/*---------------POUR UN SEUL CLIENT----------------------*/
+
+
 	int n=0;
   	int sockfd=0, newsockfd=0; //create our two other socket which is server and client sight of the proxy sockets
   	int path_len;
@@ -110,131 +151,151 @@ int main(int argc, char *argv[]) {
 	struct sockaddr_in *ipv4;
 	struct addrinfo proxy_addr;
 
+	FILE *fichier = fopen ("sitesList.txt", "r");
+	char ligne[500]; //nb max de caractères dans une ligne
+	int pub=0; //pour savoir si un site appartient à la liste ou pas. 1 si oui, 0 sinon
+
 	memset(&ipv6, 0, sizeof(ipv6));
 	memset(&ipv4, 0, sizeof(ipv4));
 	memset((char *) sendbuf, 0, sizeof(sendbuf));
 
 
-	if ( (n= recv(clientSocket,sendbuf,sizeof(sendbuf),0 ))<0 )  { //function recv that receives the buffer of the client by our proxy
+	if ( (n=recv(clientSocket,sendbuf,sizeof(sendbuf),0 ))<0 )  { //function recv that receives the buffer of the client by our proxy
 		perror ("erreur receive \n");
 		exit (1);
 	}
 
 	//-------------------PARTIE A ANALYSER ----------------------
 
-	/*
+	
 	sscanf(sendbuf,"%s %s %s",t1,t2,t3); //Parsing the request GET 
     strcpy(url,t2); 
+
+    while (fgets (ligne, 500, fichier) != NULL) { //tant qu'il y a des lignes dans le fichier
+    	//printf("%s", ligne);
+    	//printf("COMPARAISON : %d\n",strcmp(url,ligne));
+    	if (strcmp(url,ligne)==0) {
+    		pub=1;
+    	}
+    }
+
+    printf("URL : %s\n", url);
+    //printf("%d\n", pub);
+
+
     
     if(((strncmp(t3,"HTTP/1.1",8)==0)||(strncmp(t3,"HTTP/1.0",8)==0))&&((strncmp(t2,"http://",7)==0))) //Treats the request GET and POST in ipv4 or ipv6
     {
-      strcpy(t1,t2);
-      temp=strtok(t2,"//");
-      port=80;
-      temp=strtok(NULL,"/");
-      
-      sprintf(t2,"%s",temp);
+		strcpy(t1,t2);
+		temp=strtok(t2,"//");
+		port=80;
+		temp=strtok(NULL,"/");
 
-      strcat(t1,"^]");
-      temp=strtok(t1,"//");
-      temp=strtok(NULL,"/");
-      temp=strtok(NULL,"^]");
+		sprintf(t2,"%s",temp);
 
-      if(temp!=NULL) { // We need to add a '/' before our path because the parse of the request delete it
-        path_len = strlen(temp) + 2;
-      path = (char*)malloc(path_len * sizeof(char));
-      *path = '/';
-      strcat(path, temp); 
-    } 
+		strcat(t1,"^]");
+		temp=strtok(t1,"//");
+		temp=strtok(NULL,"/");
+		temp=strtok(NULL,"^]");
 
-	memset(&proxy_addr, 0, sizeof(proxy_addr));
-  	proxy_addr.ai_family=AF_INET;
-    proxy_addr.ai_socktype = SOCK_STREAM; 
+      	if(temp!=NULL) { // We need to add a '/' before our path because the parse of the request delete it
+        	path_len = strlen(temp) + 2;
+      		path = (char*)malloc(path_len * sizeof(char));
+      		*path = '/';
+      		strcat(path, temp); 
+    	} 
 
-	if ((status = getaddrinfo(t2,NULL, &proxy_addr, &res)) != 0) { 
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-		return 2;
-	}
+		memset(&proxy_addr, 0, sizeof(proxy_addr));
+  		proxy_addr.ai_family=AF_INET;
+    	proxy_addr.ai_socktype = SOCK_STREAM; 
 
-	p=res;
-	while(p!=NULL){
-	// Identification de l'adresse courante
-		if (p->ai_family == AF_INET) { // IPv4
-			ipv4 = (struct sockaddr_in *)p->ai_addr; //IPv4 addr
-			ipv4->sin_family=AF_INET; //IPv4 family
-			if(port==80){
-				ipv4-> sin_port = htons(HTTP_PORT); //port HTTP
+		if ((status = getaddrinfo(t2,NULL, &proxy_addr, &res)) != 0) { 
+			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+			return 2;
+		}
+
+		p=res;
+		while(p!=NULL){
+		// Identification de l'adresse courante
+			if (p->ai_family == AF_INET) { // IPv4
+				ipv4 = (struct sockaddr_in *)p->ai_addr; //IPv4 addr
+				ipv4->sin_family=AF_INET; //IPv4 family
+				if(port==80){
+					ipv4-> sin_port = htons(HTTP_PORT); //port HTTP
+				}
+				addr = &(ipv4->sin_addr);
+				ipver = '4'; 
+				inet_ntop(p->ai_family, addr, ipstr4, INET_ADDRSTRLEN); // transform the ip adress into char
+
+			}else { // IPv6
+				ipv6 = (struct sockaddr_in6 *)p->ai_addr; //
+
+				ipv6->sin6_family=AF_INET6; // IPv6 family
+				ipv6-> sin6_port = htons(HTTP_PORT); //HTTP port
+				addr = &(ipv6->sin6_addr); // IPv6 addr
+				addr_ipv6 = p-> ai_addrlen; //different type of sock-addr so different length for the connect argument
+				ipver = '6';
+				inet_ntop(p->ai_family, addr, ipstr6, INET6_ADDRSTRLEN); // transform the ip adress into a char 
 			}
-			addr = &(ipv4->sin_addr);
-			ipver = '4'; 
-			inet_ntop(p->ai_family, addr, ipstr4, INET_ADDRSTRLEN); // transform the ip adress into char
 
-		}else { // IPv6
-			ipv6 = (struct sockaddr_in6 *)p->ai_addr; //
-
-			ipv6->sin6_family=AF_INET6; // IPv6 family
-			ipv6-> sin6_port = htons(HTTP_PORT); //HTTP port
-			addr = &(ipv6->sin6_addr); // IPv6 addr
-			addr_ipv6 = p-> ai_addrlen; //different type of sock-addr so different length for the connect argument
-			ipver = '6';
-			inet_ntop(p->ai_family, addr, ipstr6, INET6_ADDRSTRLEN); // transform the ip adress into a char 
+			p = p->ai_next;
 		}
 
-		p = p->ai_next;
+
+		if (ipv6!=NULL){
+			if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
+				printf(" IPv6: %s\n", ipstr6);
+			}
+			if ((sockfd = socket(AF_INET6, SOCK_STREAM, 0)) <0) { // create our socket for IPv6
+				perror ("ERROR WITH THIS PROXY\n");
+				exit (1);
+			}
+			if((newsockfd=connect(sockfd,(struct sockaddr *)ipv6, addr_ipv6))<0){ //  connect between client sight and server socket 
+				perror("connect()");
+			}
+
+
+		} else {
+			if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
+				printf(" IPv4: %s\n", ipstr4);
+			}
+			if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) <0) { //create our socket for IPv4
+				perror ("ERROR WITH THIS PROXY\n");
+				exit (1);
+			}
+			if((newsockfd=connect(sockfd,(struct sockaddr*)ipv4,sizeof(struct sockaddr)))<0){ //  connect between client sight and server socket
+				perror("connect()");
+			}
+		}
+
+		if((temp!=NULL) || (port ==80)){  //If we are in HTTP
+
+			if(path==NULL){  // If the path is null the buffer still anyway want to have a '/'
+				path="/";
+			}
+
+			newBuf = strReplace(sendbuf,url, path); // replace the url send by the path
+
+			bufferCli = strReplace(newBuf, "keep-alive", "close"); // replace keep alive by close 
+
+			strcat(bufferCli, "Connection: close");  // prepare our buffer to be send
+
+			if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
+				printf("HOSTNAME =%s\n", t2);
+				printf("SEND BUFFER : \n%s\n", bufferCli);
+			}
+
+
+
+			envoyerAuNavigateur(sockfd, bufferCli, clientSocket, n); // function that send the buffer to the browser
+
+
+		}
 	}
 
-
-	if (ipv6!=NULL){
-		if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
-			printf(" IPv6: %s\n", ipstr6);
-		}
-		if ((sockfd = socket(AF_INET6, SOCK_STREAM, 0)) <0) { // create our socket for IPv6
-			perror ("ERROR WITH THIS PROXY\n");
-			exit (1);
-		}
-		if((newsockfd=connect(sockfd,(struct sockaddr *)ipv6, addr_ipv6))<0){ //  connect between client sight and server socket 
-			perror("connect()");
-		}
-
-
-	} else {
-		if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
-			printf(" IPv4: %s\n", ipstr4);
-		}
-		if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) <0) { //create our socket for IPv4
-			perror ("ERROR WITH THIS PROXY\n");
-			exit (1);
-		}
-		if((newsockfd=connect(sockfd,(struct sockaddr*)ipv4,sizeof(struct sockaddr)))<0){ //  connect between client sight and server socket
-			perror("connect()");
-		}
-	}
-
-	if((temp!=NULL) || (port ==80)){  //If we are in HTTP
-
-		if(path==NULL){  // If the path is null the buffer still anyway want to have a '/'
-			path="/";
-		}
-
-		newBuf = strReplace(sendbuf,url, path); // replace the url send by the path
-
-		bufferCli = strReplace(newBuf, "keep-alive", "close"); // replace keep alive by close 
-
-		strcat(bufferCli, "Connection: close");  // prepare our buffer to be send
-
-		if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
-			printf("HOSTNAME =%s\n", t2);
-			printf("SEND BUFFER : \n%s\n", bufferCli);
-		}
-
-		envoyerAuNavigateur(sockfd, bufferCli, clientSocket, n); // function that send the buffer to the browser
-
-
-	}
-	}
 	close(sockfd);  //close our sockets
 	close(clientSocket);
 	close(proxySocket);
-	exit(0);  */
- 
+	fclose(fichier);
+	exit(0);  
 }
