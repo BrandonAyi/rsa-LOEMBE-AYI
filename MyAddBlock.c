@@ -126,6 +126,7 @@ int main(int argc, char *argv[]) {
   	proxySocket=init(proxySocket,serv_addr, port); // initialisation de la socket proxy
   	clilen=sizeof(clie_addr);
 
+
   	clientSocket = accept(proxySocket,(struct sockaddr *) &clie_addr, (socklen_t *)&clilen);
 	if(clientSocket <0){
 		perror("servecho : erreur accept \n");
@@ -151,13 +152,13 @@ int main(int argc, char *argv[]) {
 	struct sockaddr_in *ipv4;
 	struct addrinfo proxy_addr;
 
-	FILE *fichier = fopen ("sitesList.txt", "r");
-	char ligne[500]; //nb max de caractères dans une ligne
-	int pub=0; //pour savoir si un site appartient à la liste ou pas. 1 si oui, 0 sinon
-
 	memset(&ipv6, 0, sizeof(ipv6));
 	memset(&ipv4, 0, sizeof(ipv4));
 	memset((char *) sendbuf, 0, sizeof(sendbuf));
+
+	FILE *fichier = fopen ("sitesList.txt", "r");
+	char ligne[500]; //nb max de caractères dans une ligne
+	int pub=0; //pour savoir si un site appartient à la liste ou pas. 1 si oui, 0 sinon
 
 
 	if ( (n=recv(clientSocket,sendbuf,sizeof(sendbuf),0 ))<0 )  { //function recv that receives the buffer of the client by our proxy
@@ -171,17 +172,8 @@ int main(int argc, char *argv[]) {
 	sscanf(sendbuf,"%s %s %s",t1,t2,t3); //Parsing the request GET 
     strcpy(url,t2); 
 
-    while (fgets (ligne, 500, fichier) != NULL) { //tant qu'il y a des lignes dans le fichier
-    	//printf("%s", ligne);
-    	//printf("COMPARAISON : %d\n",strcmp(url,ligne));
-    	if (strcmp(url,ligne)==0) {
-    		pub=1;
-    	}
-    }
-
-    printf("URL : %s\n", url);
+    //printf("URL : %s\n", url);
     //printf("%d\n", pub);
-
 
     
     if(((strncmp(t3,"HTTP/1.1",8)==0)||(strncmp(t3,"HTTP/1.0",8)==0))&&((strncmp(t2,"http://",7)==0))) //Treats the request GET and POST in ipv4 or ipv6
@@ -207,11 +199,21 @@ int main(int argc, char *argv[]) {
 
 		memset(&proxy_addr, 0, sizeof(proxy_addr));
   		proxy_addr.ai_family=AF_INET;
-    	proxy_addr.ai_socktype = SOCK_STREAM; 
+    	proxy_addr.ai_socktype = SOCK_STREAM;
+
+    	printf("T2 (url) : %s\n", t2); 
+
+    	while (fgets (ligne, 500, fichier) != NULL) { //tant qu'il y a des lignes dans le fichier
+    		//printf("%s", ligne);
+    		//printf("COMPARAISON : %d\n",strcmp(url,ligne));
+    		if (strcmp(t2,ligne)==0) {
+    			pub=1;
+    		}
+    	}
 
 		if ((status = getaddrinfo(t2,NULL, &proxy_addr, &res)) != 0) { 
 			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-			return 2;
+			exit(EXIT_FAILURE);
 		}
 
 		p=res;
@@ -242,10 +244,7 @@ int main(int argc, char *argv[]) {
 		}
 
 
-		if (ipv6!=NULL){
-			if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
-				printf(" IPv6: %s\n", ipstr6);
-			}
+		if (ipv6!=NULL){ //Soit c'est du ipv6
 			if ((sockfd = socket(AF_INET6, SOCK_STREAM, 0)) <0) { // create our socket for IPv6
 				perror ("ERROR WITH THIS PROXY\n");
 				exit (1);
@@ -254,11 +253,7 @@ int main(int argc, char *argv[]) {
 				perror("connect()");
 			}
 
-
-		} else {
-			if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
-				printf(" IPv4: %s\n", ipstr4);
-			}
+		} else { //Sinon c'est du ipv4
 			if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) <0) { //create our socket for IPv4
 				perror ("ERROR WITH THIS PROXY\n");
 				exit (1);
@@ -280,15 +275,7 @@ int main(int argc, char *argv[]) {
 
 			strcat(bufferCli, "Connection: close");  // prepare our buffer to be send
 
-			if (argv[2]!=NULL && (strncmp(argv[2], "-p", 2)==0)){
-				printf("HOSTNAME =%s\n", t2);
-				printf("SEND BUFFER : \n%s\n", bufferCli);
-			}
-
-
-
 			envoyerAuNavigateur(sockfd, bufferCli, clientSocket, n); // function that send the buffer to the browser
-
 
 		}
 	}
