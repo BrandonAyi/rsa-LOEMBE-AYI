@@ -14,6 +14,8 @@
 #define SERV_PORT 2222
 #define PACKAGE_LENGTH 4096 // be careful, if you increase the buffer's size, you won't receive packets from the browser
 #define HTTP_PORT 80
+#define BUFFER_SIZE 8192
+#define HOST_MAX_SIZE 255
 
 char *strReplace(char *orig, char *rep, char *with) { // function to replace a char * to an other in the buffer (Source : http://stackoverflow.com/questions/779875/what-is-the-function-to-replace-string-in-c)
     char *result; // the return string
@@ -289,6 +291,11 @@ int main(int argc, char *argv[]) {
 
 					}
 				} else printf("SITE BLACKLISTE\n"); 
+						char error[BUFFER_SIZE + HOST_MAX_SIZE];
+						sprintf(error, "%s %s %s", "<h1>Access forbidden : </h1><h2><b style=\"color: red;\">", t2, "</b>is not authorized by the proxy</h2>");
+		
+						send(clientSocket, error, strlen(error), 0);
+						close(clientSocket);
 
 			}
 
