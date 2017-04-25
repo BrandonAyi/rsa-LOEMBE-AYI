@@ -97,7 +97,7 @@ void envoyerAuNavigateur(int sockServer, char *buffer, int sockClient, int n){
       n=recv(sockServer,buffer,sizeof(buffer),0); //reçoit le buffer du server
       if(!(n<=0))
       send(sockClient,buffer,n,0);  //envoie le buffer au navigateur
-     }while(n>0);
+     } while(n>0);
   }
 }
 
