@@ -12,19 +12,17 @@
 #include <sys/types.h>
 
 #define SERV_PORT 2222
-#define PACKAGE_LENGTH 4096 // be careful, if you increase the buffer's size, you won't receive packets from the browser
+#define PACKAGE_LENGTH 4096
 #define HTTP_PORT 80
-#define BUFFER_SIZE 8192
-#define HOST_MAX_SIZE 255
 
-char *strReplace(char *orig, char *rep, char *with) { // function to replace a char * to an other in the buffer (Source : http://stackoverflow.com/questions/779875/what-is-the-function-to-replace-string-in-c)
-    char *result; // the return string
-    char *ins;    // the next insert point
-    char *tmp;    // varies
-    int len_rep;  // length of rep
-    int len_with; // length of with
-    int len_front; // distance between rep and end of last rep
-    int count;    // number of replacements
+char *strReplace(char *orig, char *rep, char *with) { // fonction pour remplacer un char* par un autre (Source : http://stackoverflow.com/questions/779875/what-is-the-function-to-replace-string-in-c)
+    char *result;
+    char *ins;    
+    char *tmp;    
+    int len_rep;  
+    int len_with; 
+    int len_front; 
+    int count;
 
     if (!orig)
       return NULL;
@@ -50,13 +48,22 @@ char *strReplace(char *orig, char *rep, char *with) { // function to replace a c
       len_front = ins - orig;
       tmp = strncpy(tmp, orig, len_front) + len_front;
       tmp = strcpy(tmp, with) + len_with;
-        orig += len_front + len_rep; // move to next "end of rep"
+        orig += len_front + len_rep;
       }
       strcpy(tmp, orig);
       return result;
     }
 
 int init(int sock, struct sockaddr_in serv_addr, int port) {
+
+	printf("\n\n- - - - - - - - - - - - - - - - - - - - - - -");
+	printf("\n- - - - - - - - PROXY SERVER BY - - - - - - - -");
+	printf("\n- - - - - - - - - ALEX-KEVIN - - - - - - - - -");
+	printf("\n- - - - - - - - - - - AND - - - - - - - - - - -");
+	printf("\n- - - - - - - - - - BRANDON - - - - - - - - - -");
+	printf("\n- - - - - - - - - NOW RUNNING - - - - - - - - - ");
+	printf("\n- - - - - - - - - - - - - - - - - - - - - - - -\n\n");
+
 
 	serv_addr.sin_family = AF_INET ;
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -135,7 +142,7 @@ static char* getPath(char* t1, char* temp, char* path, int path_len) {
 	temp=strtok(NULL,"/");
 	temp=strtok(NULL,"^]");
 
-  	if(temp!=NULL) { // We need to add a '/' before our path because the parse of the request delete it
+  	if(temp!=NULL) { // Il faut ajouter un '/' avant le path car il est retiré par le parse de la requête
     	path_len = strlen(temp) + 2;
   		path = (char*)malloc(path_len * sizeof(char));
   		*path = '/';
@@ -156,7 +163,7 @@ int main(int argc, char *argv[]) {
   	struct sockaddr_in clie_addr, serv_addr;
 
   	pid_t pid;
-	char ipstr4[INET_ADDRSTRLEN], ipstr6 [INET6_ADDRSTRLEN], ipver;  //ipstr4 = address ipv4 and ipstr6 = address ipv6
+	char ipstr4[INET_ADDRSTRLEN], ipstr6 [INET6_ADDRSTRLEN], ipver;  //ipstr4 = addresse ipv4 et ipstr6 = addresse ipv6
 
   	memset((char *) &serv_addr, 0, sizeof(serv_addr));
   	memset((char *) &clie_addr, 0, sizeof(clie_addr));
@@ -175,7 +182,7 @@ int main(int argc, char *argv[]) {
 	  	clientSocket = accept(proxySocket,(struct sockaddr *) &clie_addr, (socklen_t *)&clilen); //socket de dialogue
 		
 		if(clientSocket <0){
-			perror("servecho : erreur accept \n");
+			perror("servecho : error accept \n");
 			exit(1);
 		}
 
@@ -183,15 +190,15 @@ int main(int argc, char *argv[]) {
     	if (pid==0) {
 
 			int n=0;
-		  	int sockfd=0, newsockfd=0; //create our two other socket which is server and client sight of the proxy sockets
+		  	int sockfd=0, newsockfd=0; //créé nos deux autres sockets serveur et client
 		  	int port = 80;
 		  	int path_len=0;
 
-			size_t addr_ipv6; //length type for IPv6
+			size_t addr_ipv6; //taille du type Ipv6
 
 			char sendbuf[PACKAGE_LENGTH], t1[300],t2[200],t3[10];
 			char *bufferCli=NULL; 
-			char *path=NULL;  //path of each url of a request
+			char *path=NULL;  //path de chaque url d'une requête
 			char *temp=NULL;
 			char *newBuf=NULL; 
 			char url[500]; //char qui va contenir l'url totale de la requête
@@ -205,17 +212,17 @@ int main(int argc, char *argv[]) {
 			memset(&ipv4, 0, sizeof(ipv4));
 			memset((char *) sendbuf, 0, sizeof(sendbuf));
 
-			if ( (n=recv(clientSocket,sendbuf,sizeof(sendbuf),0 ))<0 )  { //function recv that receives the buffer of the client by our proxy
-				perror ("erreur receive \n");
+			if ( (n=recv(clientSocket,sendbuf,sizeof(sendbuf),0 ))<0 )  { //reçoit le buffer du client par notre proxy
+				perror ("error receive \n");
 				exit (1);
 			}
 
-			sscanf(sendbuf,"%s %s %s",t1,t2,t3); //Parsing the request GET 
+			sscanf(sendbuf,"%s %s %s",t1,t2,t3); //parsing de la requête GET
     		strcpy(url,t2); 
 
     		//printf(" ---T2--- : %s\n", t2);
 		 
-		    if(((strncmp(t3,"HTTP/1.1",8)==0)||(strncmp(t3,"HTTP/1.0",8)==0))&&((strncmp(t2,"http://",7)==0))) //Treats the request GET and POST in ipv4 or ipv6
+		    if(((strncmp(t3,"HTTP/1.1",8)==0)||(strncmp(t3,"HTTP/1.0",8)==0))&&((strncmp(t2,"http://",7)==0))) //traiter la requête GET (ipv4 ou ipv6)
 		    {
 				strcpy(t1,t2);
 				temp=strtok(t2,"//");
@@ -243,24 +250,24 @@ int main(int argc, char *argv[]) {
 					p=res;
 					while(p!=NULL){
 					// Identification de l'adresse courante
-						if (p->ai_family == AF_INET) { // IPv4
+						if (p->ai_family == AF_INET) { //domaine internet ipv4
 							ipv4 = (struct sockaddr_in *)p->ai_addr; //IPv4 addr
-							ipv4->sin_family=AF_INET; //IPv4 family
+							ipv4->sin_family=AF_INET; //domaine internet ipv4
 							if(port==80){
 								ipv4-> sin_port = htons(HTTP_PORT); //port HTTP
 							}
 							addr = &(ipv4->sin_addr);
 							ipver = '4'; 
-							inet_ntop(p->ai_family, addr, ipstr4, INET_ADDRSTRLEN); // transform the ip adress into char
+							inet_ntop(p->ai_family, addr, ipstr4, INET_ADDRSTRLEN); // transforme l'adresse Ip en char
 
 						}else { // IPv6
-							ipv6 = (struct sockaddr_in6 *)p->ai_addr; //
-							ipv6->sin6_family=AF_INET6; // IPv6 family
-							ipv6-> sin6_port = htons(HTTP_PORT); //HTTP port
+							ipv6 = (struct sockaddr_in6 *)p->ai_addr; 
+							ipv6->sin6_family=AF_INET6; // //domaine internet ipv6
+							ipv6-> sin6_port = htons(HTTP_PORT);
 							addr = &(ipv6->sin6_addr); // IPv6 addr
 							addr_ipv6 = p-> ai_addrlen; //different type of sock-addr so different length for the connect argument
 							ipver = '6';
-							inet_ntop(p->ai_family, addr, ipstr6, INET6_ADDRSTRLEN); // transform the ip adress into a char 
+							inet_ntop(p->ai_family, addr, ipstr6, INET6_ADDRSTRLEN);
 						}
 
 						p = p->ai_next; //Prochaine adresse
@@ -268,7 +275,7 @@ int main(int argc, char *argv[]) {
 
 					if (ipv6!=NULL){ //Soit c'est du ipv6
 						if ((sockfd = socket(AF_INET6, SOCK_STREAM, 0)) <0) { //création de la socket pour Ipv6
-							perror ("ERROR WITH THIS PROXY\n");
+							perror ("error with the proxy\n");
 							exit (1);
 						}
 						if((newsockfd=connect(sockfd,(struct sockaddr *)ipv6, addr_ipv6))<0){ //connexion entre client et serveur
@@ -277,7 +284,7 @@ int main(int argc, char *argv[]) {
 
 					} else { //Sinon c'est du ipv4
 						if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) <0) { //création de la socket pour Ipv4
-							perror ("ERROR WITH THIS PROXY\n");
+							perror ("error with the proxy\n");
 							exit (1);
 						}
 						if((newsockfd=connect(sockfd,(struct sockaddr*)ipv4,sizeof(struct sockaddr)))<0){ //connexion entre client et serveur
@@ -287,17 +294,17 @@ int main(int argc, char *argv[]) {
 
 					if((temp!=NULL) || (port ==80)){  //If we are in HTTP
 
-						if(path==NULL){  // If the path is null the buffer still anyway want to have a '/'
+						if(path==NULL){  // Il faut quand même un '/' même si le buffer est nul
 							path="/";
 						}
 
 						newBuf = strReplace(sendbuf,url, path); // replace the url send by the path
 
-						bufferCli = strReplace(newBuf, "keep-alive", "close"); // replace keep alive by close 
+						bufferCli = strReplace(newBuf, "keep-alive", "close"); // remplace keep alive par close 
 						
-						strcat(bufferCli, "Connection: close");  // prepare our buffer to be send
+						strcat(bufferCli, "Connection: close");  // prepare le buffer à être envoyer
 
-						sendBrowser(sockfd, bufferCli, clientSocket, n); // function that send the buffer to the browser
+						sendBrowser(sockfd, bufferCli, clientSocket, n); // envoie le buffer au navigateur
 
 					}
 				} else {printf("SITE BLACKLISTE\n");} 

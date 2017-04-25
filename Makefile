@@ -1,2 +1,2 @@
-block : MyAddBlock.c
-	gcc -Wall -Wextra -o block MyAddBlock.c 
+block : MyAdBlock.c
+	gcc -Wall -Wextra -o block MyAdBlock.c 
