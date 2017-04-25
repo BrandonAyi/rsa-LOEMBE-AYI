@@ -102,15 +102,24 @@ void sendBrowser(int sockServer, char *buffer, int sockClient, int n){
   }
 }
 
-static int getBlackList(char* host) {
+static int getBlackList(char* host, char* path) {
 	FILE *fp;
 	char buff[255];
 	fp = fopen("black_list.txt", "r");
 	while ( fgets(buff, 255, (FILE*)fp) != NULL) {
-	    if (strncmp(buff, host, strlen(host)) == 0) {
-	    	fclose(fp);
-	    	return 0;
+		//printf("STRSTR : %s\n", strstr(buff,"||"));
+		if(strstr(buff,"||")!=NULL) { 
+	    	if (strstr(buff,host)!= NULL) {
+	    		fclose(fp);
+	    		return 0;
+	    	}
 	    }
+	    //printf("TEMP : %s\n", temp); 
+	    /*if (strstr(temp, buff)!=NULL) {
+	    	printf("OKOK\n");
+	    	//fclose(fp);
+	    	//return 0;
+	    }*/
 	}
 	fclose(fp);
 	return 1;
@@ -216,13 +225,12 @@ int main(int argc, char *argv[]) {
 
 				path=getPath(t1, temp, path, path_len);
 
-				printf("Path : %s\n", path); 
-
 				memset(&proxy_addr, 0, sizeof(proxy_addr));
 		  		proxy_addr.ai_family=AF_INET;
 		    	proxy_addr.ai_socktype = SOCK_STREAM;
 
-				if (getBlackList(t2) != 0) {
+		    	//printf("PATH %s\n", path);
+				if (getBlackList(t2, path) != 0) {
 
 					if ((status = getaddrinfo(t2,NULL, &proxy_addr, &res)) != 0) { 
 						fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
@@ -292,7 +300,7 @@ int main(int argc, char *argv[]) {
 				} else { 
 					printf("SITE BLACKLISTE\n"); 
 					char error[BUFFER_SIZE + HOST_MAX_SIZE];
-					sprintf(error, "%s %s %s", "<h1>Accès refusé : </h1><h4><b style=\"color: red;\">", t2, "</b>est un site blacklisté (répertorié sur easylist.to)</h4>");
+					sprintf(error, "%s %s %s", "<h1>Accès refusé : </h1><h4><b style=\"color: red;\">", t2, "</b>est un site blacklisté (répertorié sur easylist.to) </h4>");
 		
 					send(clientSocket, error, strlen(error), 0);
 					close(clientSocket);
