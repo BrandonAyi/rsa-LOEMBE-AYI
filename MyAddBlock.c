@@ -95,7 +95,7 @@ void sendBrowser(int sockServer, char *buffer, int sockClient, int n){
       bzero((char*)buffer,sizeof(buffer));
       n=recv(sockServer,buffer,sizeof(buffer),0); //reçoit le buffer du server
       if(!(n<=0))
-      send(sockClient,buffer,n,0);  //envoie le buffer au navigateur
+      send(sockClient,buffer,n,0); //envoie le buffer au navigateur
      } while(n>0);
   }
 }
@@ -191,7 +191,6 @@ int main(int argc, char *argv[]) {
 			memset(&ipv4, 0, sizeof(ipv4));
 			memset((char *) sendbuf, 0, sizeof(sendbuf));
 
-
 			if ( (n=recv(clientSocket,sendbuf,sizeof(sendbuf),0 ))<0 )  { //function recv that receives the buffer of the client by our proxy
 				perror ("erreur receive \n");
 				exit (1);
@@ -215,7 +214,7 @@ int main(int argc, char *argv[]) {
 
 				path=getPath(t1, temp, path, path_len);
 
-				//printf("Path : %s\n", path); 
+				printf("Path : %s\n", path); 
 
 				memset(&proxy_addr, 0, sizeof(proxy_addr));
 		  		proxy_addr.ai_family=AF_INET;
@@ -284,7 +283,7 @@ int main(int argc, char *argv[]) {
 						bufferCli = strReplace(newBuf, "keep-alive", "close"); // replace keep alive by close 
 						
 						strcat(bufferCli, "Connection: close");  // prepare our buffer to be send
-						printf("BUFFER CLI %s\n", bufferCli );
+
 						sendBrowser(sockfd, bufferCli, clientSocket, n); // function that send the buffer to the browser
 
 					}
