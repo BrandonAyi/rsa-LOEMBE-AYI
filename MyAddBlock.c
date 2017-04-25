@@ -105,21 +105,24 @@ void sendBrowser(int sockServer, char *buffer, int sockClient, int n){
 static int getBlackList(char* host, char* path) {
 	FILE *fp;
 	char buff[255];
+	char temp[255];
 	fp = fopen("black_list.txt", "r");
 	while ( fgets(buff, 255, (FILE*)fp) != NULL) {
 		//printf("STRSTR : %s\n", strstr(buff,"||"));
-		if(strstr(buff,"||")!=NULL) { 
+		if( strstr(buff,"||")!=NULL || strstr(buff,"##") || strstr(buff,"###") ) { 
 	    	if (strstr(buff,host)!= NULL) {
 	    		fclose(fp);
 	    		return 0;
 	    	}
 	    }
-	    //printf("TEMP : %s\n", temp); 
-	    /*if (strstr(temp, buff)!=NULL) {
-	    	printf("OKOK\n");
-	    	//fclose(fp);
-	    	//return 0;
-	    }*/
+	    if (path!=NULL) {
+	    	strcpy(temp,path);
+	    	//printf("TEMP : %s\n BUFF : %s\n\n\n",temp, buff);
+		    if (strstr(temp, buff)!=NULL) {
+		    	fclose(fp);
+		    	return 0;
+		    }
+	    }
 	}
 	fclose(fp);
 	return 1;
@@ -297,15 +300,7 @@ int main(int argc, char *argv[]) {
 						sendBrowser(sockfd, bufferCli, clientSocket, n); // function that send the buffer to the browser
 
 					}
-				} else { 
-					printf("SITE BLACKLISTE\n"); 
-					char error[BUFFER_SIZE + HOST_MAX_SIZE];
-					sprintf(error, "%s %s %s", "<h1>Accès refusé : </h1><h4><b style=\"color: red;\">", t2, "</b>est un site blacklisté (répertorié sur easylist.to) </h4>");
-		
-					send(clientSocket, error, strlen(error), 0);
-					close(clientSocket);
-				}
-
+				} else {printf("SITE BLACKLISTE\n");} 
 			}
 
 			close(sockfd);  //close our sockets
