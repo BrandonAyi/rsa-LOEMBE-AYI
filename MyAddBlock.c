@@ -97,7 +97,7 @@ void envoyerAuNavigateur(int sockServer, char *buffer, int sockClient, int n){
       n=recv(sockServer,buffer,sizeof(buffer),0); //reçoit le buffer du server
       if(!(n<=0))
       send(sockClient,buffer,n,0);  //envoie le buffer au navigateur
-     } while(n>0);
+     }while(n>0);
   }
 }
 
@@ -132,12 +132,15 @@ int main(int argc, char *argv[]) {
   	memset((char *) &serv_addr, 0, sizeof(serv_addr));
   	memset((char *) &clie_addr, 0, sizeof(clie_addr));
 
-  	port = atoi(argv[1]); //converti l'argument du port en int
+  	
 
   	if (argc != 2){
     	perror("erreur nombre d'argument\n");
     	exit(1);
 	}
+
+	port = atoi(argv[1]); //converti l'argument du port en int 
+
   	proxySocket=init(proxySocket,serv_addr, port); // initialisation de la socket proxy
   	clilen=sizeof(clie_addr);
 
@@ -278,6 +281,7 @@ int main(int argc, char *argv[]) {
 
 					}
 				} else printf("SITE BLACKLISTE\n"); 
+
 
 			}
 
